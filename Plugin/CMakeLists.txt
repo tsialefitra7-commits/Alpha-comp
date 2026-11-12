@@ -4,12 +4,22 @@
 # juce_audio_devices, le VST3 non).
 set(ALPHACOMP_PLUGIN_FORMATS "VST3 AU Standalone" CACHE STRING "Formats de plugin JUCE")
 
+# En croisé Windows, le helper de manifeste VST3 de JUCE ne peut pas charger le
+# binaire (outils hôte ≠ cible) : on désactive la génération automatique et on
+# copie un manifeste modèle (voir moduleinfo-windows.json, identique quelque
+# soit la plateforme).
+set(ALPHACOMP_VST3_MANIFEST_OPT "")
+if(CMAKE_CROSSCOMPILING AND WIN32)
+    set(ALPHACOMP_VST3_MANIFEST_OPT VST3_AUTO_MANIFEST FALSE)
+endif()
+
 juce_add_plugin(alpha-comp
     VERSION 1.0.0
     COMPANY_NAME "AlphaComp"
     PLUGIN_MANUFACTURER_CODE "AlCo"
     PLUGIN_CODE "AlCp"
     FORMATS ${ALPHACOMP_PLUGIN_FORMATS}
+    ${ALPHACOMP_VST3_MANIFEST_OPT}
     PRODUCT_NAME "alpha-comp"
     DESCRIPTION "alpha-comp — Compresseur inspiré du FabFilter Pro-C 2"
     IS_SYNTH FALSE
@@ -33,6 +43,14 @@ target_link_libraries(alpha-comp PRIVATE
     juce::juce_gui_basics
 )
 
+# Sous Windows MinGW/Clang, les #pragma comment(lib) de JUCE (MSVC) sont
+# ignorés : on lie explicitement les bibliothèques Direct2D/DirectComposition
+# utilisées par juce_graphics (sinon DCompositionCreateDevice est indéfini).
+if(WIN32)
+    target_link_libraries(alpha-comp PRIVATE
+        d2d1 dwrite d3d11 dcomp dxguid windowscodecs)
+endif()
+
 # juce_audio_utils (audio devices / ALSA) n'est requis que pour le Standalone.
 if(ALPHACOMP_PLUGIN_FORMATS MATCHES "Standalone")
     target_link_libraries(alpha-comp PRIVATE juce::juce_audio_utils)
@@ -46,3 +64,15 @@ target_compile_definitions(alpha-comp PUBLIC
 
 # JUCE 8 exige C++20 (le projet racine l'impose déjà, on le rappelle ici).
 set_target_properties(alpha-comp PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
+
+# Manifeste VST3 en croisé Windows : copie du modèle (identique plateforme
+# indépendante — mêmes CID/classes que génère juce_vst3_helper en natif).
+if(CMAKE_CROSSCOMPILING AND WIN32 AND ALPHACOMP_PLUGIN_FORMATS MATCHES "VST3")
+    get_target_property(_alphacomp_vst3_product alpha-comp_VST3 JUCE_PLUGIN_ARTEFACT_FILE)
+    add_custom_command(TARGET alpha-comp_VST3 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${_alphacomp_vst3_product}/Contents/Resources"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/moduleinfo-windows.json"
+            "${_alphacomp_vst3_product}/Contents/Resources/moduleinfo.json"
+        VERBATIM)
+endif()

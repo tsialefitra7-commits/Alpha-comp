@@ -1,0 +1,5 @@
+#!/bin/sh
+# zig-cc — wrapper CMake : compilateur C croisé Windows x86_64 via Zig.
+# -Wno-date-time : zig refuse __DATE__/__TIME__ en constexpr (reproductibilité),
+# mais le SDK VST3 de JUCE en utilise un pour son identifiant de build.
+exec "$(dirname "$0")/zig-resolve.sh" cc -target x86_64-windows-gnu -Wno-date-time "$@"

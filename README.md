@@ -209,6 +209,27 @@ Sous Linux, les extensions X11 optionnelles (Xrandr/Xinerama/XShm/Xrender/
 Xcursor) sont désactivables par defines ; JUCE charge X11 via `dlopen`, seuls
 les en-têtes de base (`libx11-dev`) sont requis à la compilation.
 
+### Cross-compilation Windows (VST3) depuis Linux
+
+Aucun MinGW système n'est requis : le toolchain utilise Zig (paquet pypi
+`ziglang`) qui embarque clang + le sysroot mingw-w64, ainsi qu'un compilateur
+de ressources (`zig rc`) :
+
+```bash
+pip install ziglang
+cmake -S . -B build-win \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/windows-x86_64-zig.cmake \
+  -DALPHACOMP_PLUGIN_FORMATS=VST3 \
+  -DALPHACOMP_FETCH_JUCE=ON
+./scripts/build-env.sh cmake --build build-win
+```
+
+Le manifeste VST3 (`moduleinfo.json`) est copié depuis
+`Plugin/moduleinfo-windows.json` (le helper de JUCE ne peut pas charger un
+binaire Windows depuis Linux). Note : avec clang ≥ 20, deux correctifs sont
+apportés au clone JUCE (constructeur `AudioProcessor` par référence de tableau,
+`__uuidof` sur smart pointer) — voir les commentaires dans le code patché.
+
 ---
 
 ## Tests
