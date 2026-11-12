@@ -75,15 +75,30 @@ auto createParameterLayout()
 } // namespace
 
 AlphaCompProcessor::AlphaCompProcessor()
-    // Pas de BusesProperties explicite : le layout par défaut (stéréo)
-    // convient, et le nombre de canaux réel est lu dans prepareToPlay().
-    // (Évite aussi les différences AudioChannelLayout/Set entre JUCE 7 et 8.)
-    : apvts(*this, nullptr, "alpha-comp", createParameterLayout())
+    // Bus stéréo EXPLICITES et ACTIVÉS par défaut : le constructeur par
+    // défaut d'AudioProcessor crée des bus « disabled by default », ce que
+    // les DAW respectent (aucun routage audio => silence).
+    : juce::AudioProcessor(juce::AudioProcessor::BusesProperties()
+                               .withInput("Input", juce::AudioChannelSet::stereo(), true)
+                               .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts(*this, nullptr, "alpha-comp", createParameterLayout())
 {
     updateDSPParams();
 }
 
 AlphaCompProcessor::~AlphaCompProcessor() = default;
+
+bool AlphaCompProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
+    const auto mainIn = layouts.getMainInputChannelSet();
+    const auto mainOut = layouts.getMainOutputChannelSet();
+
+    if (mainIn != mainOut)
+        return false;
+
+    return mainOut == juce::AudioChannelSet::mono()
+        || mainOut == juce::AudioChannelSet::stereo();
+}
 
 void AlphaCompProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {

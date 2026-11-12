@@ -38,6 +38,8 @@ public:
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
 
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
+
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }
     void setCurrentProgram(int index) override { juce::ignoreUnused(index); }
