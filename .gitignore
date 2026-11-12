@@ -1,0 +1,49 @@
+# alpha-comp — .gitignore
+
+# Build
+/build/
+build*/
+out/
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+# NB : le Makefile racine est un fichier source (secours sans CMake),
+# ne pas l'ignorer. Les builds CMake se font hors-source dans build*/.
+*.ninja
+.ninja_deps
+.ninja_log
+build.ninja
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# JUCE / plugins générés
+*.vst3
+*.vst3bundle
+*.component
+*.aaxplugin
+JuceLibraryCode/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.user
+.DS_Store
+Thumbs.db
+
+# Divers
+*.log
+*.tmp
